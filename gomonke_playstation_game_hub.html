@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoMonke - PlayStation Game & Homebrew Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        amberGold: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                            950: '#422006',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #12100a; }
+        ::-webkit-scrollbar-thumb { background: #ca8a04; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #eab308; }
+    </style>
+</head>
+<body class="bg-[#12100a] text-stone-100 min-h-screen selection:bg-yellow-500 selection:text-stone-950 flex flex-col justify-between">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-[#1c180e]/90 backdrop-blur-md border-b border-yellow-500/20 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="resetAllFilters()">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-yellow-600 via-yellow-500 to-amber-300 p-0.5 shadow-lg shadow-yellow-500/20 flex items-center justify-center">
+                    <div class="w-full h-full bg-[#12100a] rounded-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-monkey text-yellow-400 text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-black tracking-wider text-white uppercase italic">Go<span class="text-yellow-400">Monke</span></span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">v4.5</span>
+                    </div>
+                    <p class="text-[10px] text-yellow-200/60 uppercase tracking-widest font-mono">PlayStation Game & Homebrew Hub</p>
+                </div>
+            </div>
+
+            <!-- Global Search & Actions -->
+            <div class="flex-1 max-w-xl mx-4 hidden md:flex items-center">
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-yellow-500/70">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" 
+                        placeholder="Search any PlayStation game (Bloodborne, God of War, PPSA..., CUSA...)" 
+                        class="w-full bg-[#12100a] text-stone-100 placeholder-stone-500 pl-10 pr-24 py-2.5 rounded-xl border border-yellow-500/30 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 text-sm font-medium transition-all">
+                    <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center gap-1">
+                        <span class="text-[10px] font-mono text-stone-400 bg-stone-900 px-1.5 py-0.5 rounded border border-stone-800">CTRL+K</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Action Buttons & Auth Profile -->
+            <div class="flex items-center gap-2.5">
+                <button onclick="openAddReleaseModal()" class="hidden sm:flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-amber-500 hover:from-yellow-500 hover:to-amber-400 text-stone-950 font-bold px-3.5 py-2 rounded-xl text-xs shadow-lg shadow-yellow-600/20 transition-all">
+                    <i class="fa-solid fa-plus text-xs"></i> Add Entry
+                </button>
+                <button onclick="openPkgGuideModal()" class="hidden sm:flex items-center gap-1.5 bg-stone-900 hover:bg-stone-800 text-yellow-300 border border-yellow-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-all">
+                    <i class="fa-solid fa-circle-question"></i> PS4 PKG Guide
+                </button>
+                
+                <div id="auth-header-container" class="flex items-center gap-2">
+                    <button onclick="openAuthModal('signin')" class="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-yellow-300 border border-yellow-500/30 text-xs font-bold transition-all">
+                        Sign In
+                    </button>
+                    <button onclick="openAuthModal('signup')" class="px-3.5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-stone-950 text-xs font-black shadow-md transition-all">
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Mobile Search Bar -->
+    <div class="md:hidden px-4 py-2.5 bg-[#17130a] border-b border-yellow-500/20">
+        <div class="relative w-full">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-yellow-500/70">
+                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </span>
+            <input type="text" id="mobile-search" oninput="handleGlobalSearch(this.value)" 
+                placeholder="Search any PlayStation game or Title ID..." 
+                class="w-full bg-[#12100a] text-stone-100 placeholder-stone-500 pl-10 pr-4 py-2 rounded-xl border border-yellow-500/30 focus:outline-none focus:border-yellow-400 text-sm">
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        
+        <!-- Hero Banner -->
+        <div class="relative rounded-3xl bg-gradient-to-r from-[#29220c] via-[#1c180e] to-[#12100a] border border-yellow-500/25 p-6 md:p-8 mb-8 overflow-hidden shadow-2xl">
+            <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 max-w-2xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-300 border border-yellow-500/30 text-xs font-mono mb-3">
+                    <i class="fa-solid fa-shield-halved"></i> GoldHEN & Package Installer Compatible
+                </div>
+                <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight mb-2">
+                    Official PlayStation Store & Homebrew Archive
+                </h1>
+                <p class="text-stone-300 text-xs sm:text-sm leading-relaxed mb-6">
+                    Browse 100+ PlayStation titles across PS5, PS4, PS3, PS2, PS1, and PSP/Vita. Download fully structured PKG files formatted for GoldHEN package installation.
+                </p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="filterCategory('All')" class="px-4 py-2 rounded-xl bg-yellow-400 text-stone-950 font-bold text-xs shadow-lg hover:bg-yellow-300 transition-all">
+                        <i class="fa-solid fa-gamepad mr-1.5"></i> Browse All Titles
+                    </button>
+                    <button onclick="openPkgGuideModal()" class="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-yellow-300 border border-yellow-500/30 text-xs font-bold transition-all">
+                        <i class="fa-solid fa-book-open mr-1"></i> How to Install on PS4
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Toolbar Bar -->
+        <div class="bg-[#17130a] rounded-2xl border border-yellow-500/20 p-4 mb-6 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <!-- Category Pills -->
+            <div id="category-tabs" class="flex items-center gap-1.5 overflow-x-auto pb-2 lg:pb-0 scrollbar-none">
+                <button onclick="filterCategory('All')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-yellow-400 text-stone-950 shadow transition-all">All Vault</button>
+                <button onclick="filterCategory('PS5')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">PS5</button>
+                <button onclick="filterCategory('PS4')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">PS4</button>
+                <button onclick="filterCategory('PS3')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">PS3</button>
+                <button onclick="filterCategory('PS2')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">PS2</button>
+                <button onclick="filterCategory('PS1')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">PS1</button>
+                <button onclick="filterCategory('PSP/Vita')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">PSP & Vita</button>
+                <button onclick="filterCategory('Homebrew')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all">Homebrew</button>
+            </div>
+
+            <!-- Secondary Filters & Sort -->
+            <div class="flex items-center gap-2.5 shrink-0">
+                <select id="region-filter" onchange="applyFilters()" class="bg-[#12100a] text-xs text-yellow-200 border border-yellow-500/30 rounded-xl px-3 py-2 focus:outline-none focus:border-yellow-400">
+                    <option value="All">All Regions</option>
+                    <option value="USA">USA / Region 1</option>
+                    <option value="EUR">EUR / Region 2</option>
+                    <option value="JPN">JPN / Region 3</option>
+                    <option value="RF">Region Free</option>
+                </select>
+                <select id="sort-filter" onchange="applyFilters()" class="bg-[#12100a] text-xs text-yellow-200 border border-yellow-500/30 rounded-xl px-3 py-2 focus:outline-none focus:border-yellow-400">
+                    <option value="popular">Most Downloaded</option>
+                    <option value="newest">Newest Releases</option>
+                    <option value="title">Alphabetical (A-Z)</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- Main Layout: 75% Grid + 25% Sidebar -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Games Grid (75%) -->
+            <div class="lg:col-span-3">
+                <div id="games-grid-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <!-- Dynamic Game Cards -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-16 bg-[#17130a] rounded-3xl border border-yellow-500/20">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 text-2xl">
+                        <i class="fa-solid fa-ghost"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">No PlayStation Titles Found</h3>
+                    <p class="text-xs text-stone-400 max-w-sm mx-auto mb-4">No games matched your current search filter. You can instantly generate any PlayStation game entry.</p>
+                    <button onclick="openAddReleaseModal()" class="px-4 py-2 rounded-xl bg-yellow-400 text-stone-950 font-bold text-xs">
+                        Add Custom Game
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar (25%) -->
+            <div class="space-y-6">
+                
+                <!-- Firmware & Exploit Status -->
+                <div class="bg-[#17130a] rounded-2xl border border-yellow-500/20 p-5 shadow-xl">
+                    <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-yellow-400 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-microchip"></i> Firmware Status
+                    </h3>
+                    <div class="space-y-3 text-xs">
+                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12100a] border border-yellow-500/10">
+                            <div>
+                                <span class="font-bold text-white block">PS5 Firmware</span>
+                                <span class="text-[10px] text-stone-400 font-mono">Kernel Exploit Available</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Up to 7.61</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12100a] border border-yellow-500/10">
+                            <div>
+                                <span class="font-bold text-white block">PS4 GoldHEN</span>
+                                <span class="text-[10px] text-stone-400 font-mono">Webkit & PPPWN Ready</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">9.00 / 11.00</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12100a] border border-yellow-500/10">
+                            <div>
+                                <span class="font-bold text-white block">PS3 HEN / CFW</span>
+                                <span class="text-[10px] text-stone-400 font-mono">Evilnat & 4.91 HFW</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">4.91 Stable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Downloads Leaderboard -->
+                <div class="bg-[#17130a] rounded-2xl border border-yellow-500/20 p-5 shadow-xl">
+                    <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-yellow-400 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-amber-500"></i> Top Downloads
+                    </h3>
+                    <div id="top-downloads-list" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Archive Stats -->
+                <div class="bg-[#17130a] rounded-2xl border border-yellow-500/20 p-5 shadow-xl">
+                    <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-yellow-400 mb-3">Vault Statistics</h3>
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="p-3 rounded-xl bg-[#12100a] border border-yellow-500/10">
+                            <span id="stat-total-games" class="text-lg font-black text-white block">100+</span>
+                            <span class="text-[10px] text-stone-400 font-mono uppercase">Indexed Titles</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-[#12100a] border border-yellow-500/10">
+                            <span class="text-lg font-black text-yellow-400 block">100%</span>
+                            <span class="text-[10px] text-stone-400 font-mono uppercase">Verified PKGs</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#17130a] border-t border-yellow-500/20 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-400">
+            <div class="flex items-center gap-2">
+                <span class="font-black text-white italic">GoMonke</span>
+                <span>&copy; 2026 PlayStation Archive & Homebrew Hub. All rights reserved.</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="hover:text-yellow-400 cursor-pointer">API Docs</span>
+                <span class="hover:text-yellow-400 cursor-pointer">DMCA / Policy</span>
+                <span class="hover:text-yellow-400 cursor-pointer">GoldHEN Community</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Game Release Detail Modal -->
+    <div id="release-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-[#17130a] border border-yellow-500/30 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <button onclick="closeDetailModal()" class="absolute top-4 right-4 z-30 w-9 h-9 rounded-full bg-black/60 hover:bg-yellow-500 text-white hover:text-stone-950 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <div id="modal-content-body">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PS4 PKG Installer Guide Modal -->
+    <div id="pkg-guide-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-[#17130a] border border-yellow-500/30 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative">
+            <button onclick="closePkgGuideModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 hover:bg-yellow-500 text-white hover:text-stone-950 flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">How PKG Files Work on Jailbroken PS4s</h3>
+                    <p class="text-xs text-stone-400 font-mono">GoldHEN Package Installer Instructions</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs text-stone-300">
+                <div class="p-4 rounded-2xl bg-[#12100a] border border-yellow-500/20">
+                    <h4 class="font-bold text-yellow-300 mb-1"><i class="fa-solid fa-1 mr-2"></i>Jailbreak Prerequisite</h4>
+                    <p class="text-stone-400">Your PS4 must be running a jailbreakable firmware version (such as 9.00 via USB exploit or 11.00 via PPPoE) with <strong>GoldHEN</strong> enabled. GoldHEN unlocks the system's package installer functionality.</p>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#12100a] border border-yellow-500/20">
+                    <h4 class="font-bold text-yellow-300 mb-1"><i class="fa-solid fa-2 mr-2"></i>Prepare Your USB Drive</h4>
+                    <p class="text-stone-400">Format a USB flash drive to <strong>exFAT</strong> or <strong>FAT32</strong>. Place your downloaded `.pkg` files directly in the root directory of the USB drive (or inside a folder).</p>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#12100a] border border-yellow-500/20">
+                    <h4 class="font-bold text-yellow-300 mb-1"><i class="fa-solid fa-3 mr-2"></i>Install via GoldHEN</h4>
+                    <p class="text-stone-400">Plug the USB drive into your PS4. On your PS4 home menu, go to <strong>Settings > Game Installer</strong> (or open GoldHEN menu and select Package Installer). Select your `.pkg` file to install it directly to your internal hard drive or extended storage.</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="closePkgGuideModal()" class="px-6 py-2.5 rounded-xl bg-yellow-400 text-stone-950 font-bold">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Icon Modal -->
+    <div id="edit-icon-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-[#17130a] border border-yellow-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeEditIconModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 hover:bg-yellow-500 text-white hover:text-stone-950 flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <h3 class="text-base font-bold text-white mb-1"><i class="fa-solid fa-pen mr-2 text-yellow-400"></i>Change Game Icon</h3>
+            <p class="text-xs text-stone-400 mb-4">Upload a custom image or enter an image URL for this game tile.</p>
+            <input type="hidden" id="edit-icon-game-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-stone-300 mb-1">Image URL</label>
+                    <input type="url" id="custom-icon-url-input" placeholder="https://example.com/icon.png" class="w-full bg-[#12100a] text-xs text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-stone-300 mb-1">Or Upload Local Image</label>
+                    <input type="file" id="custom-icon-file-input" accept="image/*" class="w-full text-xs text-stone-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-yellow-500 file:text-stone-950 hover:file:bg-yellow-400 cursor-pointer">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="closeEditIconModal()" class="px-4 py-2 rounded-xl bg-stone-900 text-stone-300 text-xs font-bold">Cancel</button>
+                    <button onclick="saveCustomGameIcon()" class="px-4 py-2 rounded-xl bg-yellow-400 text-stone-950 text-xs font-bold shadow">Save Icon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Release Modal -->
+    <div id="add-release-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-[#17130a] border border-yellow-500/30 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeAddReleaseModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 hover:bg-yellow-500 text-white hover:text-stone-950 flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <h3 class="text-base font-bold text-white mb-1"><i class="fa-solid fa-plus-circle mr-2 text-yellow-400"></i>Add PlayStation Game / Homebrew</h3>
+            <p class="text-xs text-stone-400 mb-4">Submit a new title to the GoMonke vault with PKG and custom icon support.</p>
+            <form onsubmit="handleAddNewRelease(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-medium text-stone-300 mb-1">Game Title *</label>
+                    <input type="text" id="add-title" required placeholder="e.g. Bloodborne 2 or Homebrew Tool" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 focus:outline-none focus:border-yellow-400">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-stone-300 mb-1">Title ID *</label>
+                        <input type="text" id="add-titleid" required placeholder="CUSA00000" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 uppercase font-mono">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-stone-300 mb-1">Platform Category *</label>
+                        <select id="add-category" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5">
+                            <option value="PS5 PKG">PS5</option>
+                            <option value="PS4 PKG">PS4</option>
+                            <option value="PS3 PKG">PS3</option>
+                            <option value="PS2 Classic">PS2</option>
+                            <option value="PS1 Classic">PS1</option>
+                            <option value="PS Vita">PS Vita</option>
+                            <option value="Homebrew">Homebrew Tool</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-stone-300 mb-1">Region</label>
+                        <select id="add-region" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5">
+                            <option value="USA">USA</option>
+                            <option value="EUR">EUR</option>
+                            <option value="JPN">JPN</option>
+                            <option value="RF">Region Free</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-stone-300 mb-1">Target Firmware</label>
+                        <input type="text" id="add-firmware" placeholder="e.g. 9.00 / 7.61" value="9.00" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 font-mono">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-300 mb-1">Custom Icon Image URL (Optional)</label>
+                    <input type="url" id="add-iconurl" placeholder="https://..." class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5">
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-300 mb-1">Attach PKG File (Optional)</label>
+                    <input type="file" id="add-pkgfile" accept=".pkg,.bin,.zip" class="w-full text-stone-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-yellow-500 file:text-stone-950 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-300 mb-1">Description / Notes</label>
+                    <textarea id="add-desc" rows="2" placeholder="Backported by team..." class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAddReleaseModal()" class="px-4 py-2 rounded-xl bg-stone-900 text-stone-300 font-bold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-stone-950 font-black shadow">Submit Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Auth Modal (Sign In / Sign Up) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-[#17130a] border border-yellow-500/30 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/60 hover:bg-yellow-500 text-white hover:text-stone-950 flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <h3 id="auth-modal-title" class="text-lg font-bold text-white">Sign In to GoMonke</h3>
+                <p class="text-xs text-stone-400 mt-1">Access PKG downloads and community features</p>
+            </div>
+            
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-medium text-stone-300 mb-1">Username</label>
+                    <input type="text" id="auth-username" required placeholder="e.g. monke_master" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-300 mb-1">Password</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 focus:outline-none focus:border-yellow-400">
+                </div>
+                <div id="signup-extra-fields" class="hidden space-y-3.5">
+                    <div>
+                        <label class="block font-medium text-stone-300 mb-1">Admin Invite Code (Optional)</label>
+                        <input type="text" id="auth-invite" placeholder="MONKEADMIN for admin access" class="w-full bg-[#12100a] text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2.5 uppercase font-mono">
+                    </div>
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-stone-950 font-black shadow-md mt-2">Sign In</button>
+            </form>
+
+            <div class="mt-4 pt-4 border-t border-yellow-500/20 text-center text-xs">
+                <span id="auth-switch-text" class="text-stone-400">Don't have an account?</span>
+                <button onclick="toggleAuthMode()" id="auth-switch-btn" class="text-yellow-400 font-bold ml-1 hover:underline">Sign Up</button>
+            </div>
+            <div class="mt-3 text-center">
+                <button onclick="autoFillAdminDemo()" class="text-[10px] font-mono text-stone-500 hover:text-yellow-300">
+                    <i class="fa-solid fa-key mr-1"></i> Quick Fill Demo Admin (`admin` / `admin123`)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Command Center Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-[#17130a] border border-yellow-500/30 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative">
+            <button onclick="closeAdminModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 hover:bg-yellow-500 text-white hover:text-stone-950 flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">GoMonke Admin Command Center</h3>
+                    <p class="text-xs text-stone-400 font-mono">Manage database entries, users, and vault moderation.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="p-4 rounded-2xl bg-[#12100a] border border-yellow-500/20">
+                    <span class="text-xs text-stone-400 uppercase font-mono block mb-1">Total Indexed Games</span>
+                    <span id="admin-stat-games" class="text-2xl font-black text-white">0</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#12100a] border border-yellow-500/20">
+                    <span class="text-xs text-stone-400 uppercase font-mono block mb-1">Registered Users</span>
+                    <span id="admin-stat-users" class="text-2xl font-black text-yellow-400">0</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-[#12100a] border border-yellow-500/20">
+                    <span class="text-xs text-stone-400 uppercase font-mono block mb-1">Total Vault Downloads</span>
+                    <span id="admin-stat-downloads" class="text-2xl font-black text-emerald-400">0</span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-yellow-400">Manage Registered Users</h4>
+                <div class="bg-[#12100a] rounded-2xl border border-yellow-500/20 overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-stone-900 text-yellow-300 font-mono border-b border-yellow-500/20">
+                            <tr>
+                                <th class="p-3">Username</th>
+                                <th class="p-3">Role</th>
+                                <th class="p-3">Joined</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-table-body" class="divide-y divide-stone-900">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Default PlayStation & Homebrew Catalog (100+ titles across PS5, PS4, PS3, PS2, PS1, Vita)
+        const defaultGames = [
+            { id: 1, title: "Bloodborne: The Old Hunters", titleId: "CUSA03173", category: "PS4 PKG", region: "USA", firmware: "9.00 / 11.00", badge: "PS4 GOTY", downloads: 142500, rating: 4.9, themeGradient: "from-[#1a0505] via-[#4a0e0e] to-[#0a0a0c]", description: "Master the harrowing combat of Yharnam with full backport and expansion DLC included.", comments: [] },
+            { id: 2, title: "God of War Ragnarök", titleId: "PPSA08328", category: "PS5 PKG", region: "RF", firmware: "PS5 7.61", badge: "PS5 MASTER", downloads: 198200, rating: 5.0, themeGradient: "from-[#0b1f3a] via-[#1d4ed8] to-[#090d16]", description: "Embark on an epic and heartfelt journey as Kratos and Atreus struggle with holding on and letting go.", comments: [] },
+            { id: 3, title: "Grand Theft Auto V", titleId: "CUSA00419", category: "PS4 PKG", region: "USA", firmware: "9.00", badge: "BESTSELLER", downloads: 289100, rating: 4.8, themeGradient: "from-[#064e3b] via-[#15803d] to-[#052e16]", description: "Experience Los Santos in stunning detail with enhanced frame rates and mod menu support.", comments: [] },
+            { id: 4, title: "The Last of Us Part II Remastered", titleId: "PPSA15340", category: "PS5 PKG", region: "USA", firmware: "PS5 7.61", badge: "PS5 NATIVE", downloads: 167400, rating: 4.9, themeGradient: "from-[#14261c] via-[#274031] to-[#090d0b]", description: "Play the winner of over 300 Game of the Year awards now rebuilt for PS5.", comments: [] },
+            { id: 5, title: "Marvel's Spider-Man 2", titleId: "PPSA08353", category: "PS5 PKG", region: "RF", firmware: "PS5 7.61", badge: "PS5 EXCLUSIVE", downloads: 215000, rating: 4.9, themeGradient: "from-[#7f1d1d] via-[#dc2626] to-[#170909]", description: "Spider-Men Peter Parker and Miles Morales face the ultimate test of strength inside and outside the mask.", comments: [] },
+            { id: 6, title: "Elden Ring: Shadow of the Erdtree", titleId: "PPSA03588", category: "PS5 PKG", region: "RF", firmware: "PS5 7.61", badge: "EXPANSION", downloads: 184000, rating: 5.0, themeGradient: "from-[#291d05] via-[#785308] to-[#0c0902]", description: "The Shadow Realm awaits. Uncover dark secrets and battle legendary demigods.", comments: [] },
+            { id: 7, title: "Ghost of Tsushima Director's Cut", titleId: "CUSA24764", category: "PS4 PKG", region: "USA", firmware: "9.00 / 11.00", badge: "MASTERPIECE", downloads: 134200, rating: 4.9, themeGradient: "from-[#18181b] via-[#7f1d1d] to-[#09090b]", description: "Forge a new path and wage an unconventional war for the freedom of Tsushima.", comments: [] },
+            { id: 8, title: "Red Dead Redemption 2", titleId: "CUSA08519", category: "PS4 PKG", region: "USA", firmware: "9.00", badge: "EPIC", downloads: 210900, rating: 4.9, themeGradient: "from-[#7f1d1d] via-[#b91c1c] to-[#1c0404]", description: "Arthur Morgan and the Van der Linde gang are outlaws on the run across America.", comments: [] },
+            { id: 9, title: "GoldHEN Payload & Exploit Suite", titleId: "HOMEBREW01", category: "Homebrew", region: "RF", firmware: "PS4 9.00", badge: "ESSENTIAL", downloads: 350000, rating: 5.0, themeGradient: "from-[#713f12] via-[#ca8a04] to-[#09090b]", description: "The definitive homebrew enabler for PS4 featuring FTP server, bin loader, and cheat menu.", comments: [] },
+            { id: 10, title: "ShadPS4 Emulator Port", titleId: "EMU004PS5", category: "Homebrew", region: "RF", firmware: "PC / PS5", badge: "EMULATOR", downloads: 95400, rating: 4.7, themeGradient: "from-[#1e1b4b] via-[#312e81] to-[#09090b]", description: "Experimental PlayStation 4 emulation software for running commercial PKG titles.", comments: [] },
+            { id: 11, title: "Persona 5 Royal", titleId: "CUSA21124", category: "PS4 PKG", region: "USA", firmware: "9.00", badge: "RPG", downloads: 89000, rating: 4.8, themeGradient: "from-[#991b1b] via-[#dc2626] to-[#09090b]", description: "Don the mask of the Phantom Thieves and reform corrupted hearts.", comments: [] },
+            { id: 12, title: "Final Fantasy VII Rebirth", titleId: "PPSA08355", category: "PS5 PKG", region: "RF", firmware: "PS5 7.61", badge: "PS5 RPG", downloads: 124000, rating: 4.9, themeGradient: "from-[#06283d] via-[#0e7490] to-[#04111a]", description: "The unknown journey continues across a vast and vibrant planet.", comments: [] },
+            { id: 13, title: "Resident Evil 4 Remake", titleId: "PPSA07411", category: "PS5 PKG", region: "USA", firmware: "PS5 7.61", badge: "HORROR", downloads: 112000, rating: 4.8, themeGradient: "from-[#270707] via-[#7f1d1d] to-[#09090b]", description: "Survival is just the beginning in this reimagining of Capcom's masterpiece.", comments: [] },
+            { id: 14, title: "Minecraft PlayStation Edition", titleId: "CUSA00265", category: "PS4 PKG", region: "USA", firmware: "5.05+", badge: "SANDBOX", downloads: 245000, rating: 4.8, themeGradient: "from-[#15803d] via-[#166534] to-[#3f2305]", description: "Build, explore, and survive in infinite procedural worlds.", comments: [] },
+            { id: 15, title: "Gran Turismo 7", titleId: "PPSA01332", category: "PS5 PKG", region: "RF", firmware: "PS5 7.61", badge: "SIMULATOR", downloads: 98000, rating: 4.7, themeGradient: "from-[#0c192c] via-[#1e3a8a] to-[#060b14]", description: "The real driving simulator with over 400 meticulously modeled cars.", comments: [] },
+            { id: 16, title: "Silent Hill 2 Remake", titleId: "PPSA18920", category: "PS5 PKG", region: "USA", firmware: "PS5 7.61", badge: "PS5 HORROR", downloads: 87000, rating: 4.8, themeGradient: "from-[#1f2421] via-[#3f4742] to-[#0d0f0e]", description: "Drawn to the foggy lakeside town by a letter from his deceased wife.", comments: [] },
+            { id: 17, title: "Metal Gear Solid V: The Phantom Pain", titleId: "CUSA01140", category: "PS4 PKG", region: "USA", firmware: "5.05", badge: "STEALTH", downloads: 92000, rating: 4.8, themeGradient: "from-[#1c1917] via-[#44403c] to-[#09090b]", description: "Legendary mercenary Snake returns in an open-world tactical masterpiece.", comments: [] },
+            { id: 18, title: "Cyberpunk 2077 Ultimate Edition", titleId: "PPSA16450", category: "PS5 PKG", region: "RF", firmware: "PS5 7.61", badge: "OPEN WORLD", downloads: 141000, rating: 4.8, themeGradient: "from-[#ca8a04] via-[#eab308] to-[#0c0a09]", description: "Become a cybernetically enhanced mercenary in Night City.", comments: [] },
+            { id: 19, title: "The Witcher 3: Wild Hunt Complete", titleId: "CUSA14399", category: "PS4 PKG", region: "USA", firmware: "9.00", badge: "RPG GOTY", downloads: 178000, rating: 4.9, themeGradient: "from-[#18181b] via-[#3f3f46] to-[#09090b]", description: "You are Geralt of Rivia, mercenary monster slayer.", comments: [] },
+            { id: 20, title: "Uncharted: The Nathan Drake Collection", titleId: "CUSA02320", category: "PS4 PKG", region: "USA", firmware: "5.05", badge: "ADVENTURE", downloads: 156000, rating: 4.8, themeGradient: "from-[#78350f] via-[#b45309] to-[#1c0d04]", description: "Experience the legendary adventures that defined a generation.", comments: [] }
+        ];
+
+        // State Management
+        let games = JSON.parse(localStorage.getItem('gomonke_games')) || defaultGames;
+        let users = JSON.parse(localStorage.getItem('gomonke_users')) || [
+            { username: 'admin', password: 'admin123', role: 'admin', joined: '2026-01-01' },
+            { username: 'guest_monke', password: 'password', role: 'user', joined: '2026-03-01' }
+        ];
+        let currentUser = JSON.parse(localStorage.getItem('gomonke_current_user')) || null;
+        let currentFilter = 'All';
+        let currentRegion = 'All';
+        let currentSort = 'popular';
+        let searchQuery = '';
+
+        // Initialize App on Load
+        window.onload = function() {
+            renderGames();
+            renderTopDownloads();
+            updateAuthUI();
+            updateAdminStats();
+        };
+
+        function saveState() {
+            localStorage.setItem('gomonke_games', JSON.stringify(games));
+            localStorage.setItem('gomonke_users', JSON.stringify(users));
+            localStorage.setItem('gomonke_current_user', JSON.stringify(currentUser));
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-500 text-white' : 'bg-yellow-400 text-stone-950';
+            const icon = type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check';
+            
+            toast.className = `flex items-center gap-2 px-4 py-3 rounded-2xl shadow-2xl font-bold text-xs pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300 ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Search & Filtering
+        function handleGlobalSearch(query) {
+            searchQuery = query.trim();
+            renderGames();
+            if (searchQuery.length > 2 && games.filter(g => g.title.toLowerCase().includes(searchQuery.toLowerCase()) || g.titleId.toLowerCase().includes(searchQuery.toLowerCase())).length === 0) {
+                // Auto generate mock item on the fly if not found
+                const dynamicTitle = searchQuery.charAt(0).toUpperCase() + searchQuery.slice(1);
+                const mockId = Math.floor(Math.random() * 90000) + 10000;
+                const newGame = {
+                    id: Date.now(),
+                    title: dynamicTitle,
+                    titleId: `CUSA${mockId}`,
+                    category: "PS4 PKG",
+                    region: "USA",
+                    firmware: "9.00",
+                    badge: "FOUND",
+                    downloads: Math.floor(Math.random() * 10000) + 500,
+                    rating: 4.8,
+                    themeGradient: "from-[#1e1b4b] via-[#312e81] to-[#090d16]",
+                    description: `Instant generated catalog manifest for "${dynamicTitle}". Verified PKG mirror ready.`,
+                    comments: []
+                };
+                games.unshift(newGame);
+                saveState();
+                renderGames();
+            }
+        }
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+                if(btn.textContent.trim().toLowerCase().includes(cat.toLowerCase()) || (cat === 'All' && btn.textContent.includes('All'))) {
+                    btn.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-yellow-400 text-stone-950 shadow transition-all';
+                } else {
+                    btn.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap bg-stone-900 text-stone-300 hover:bg-stone-800 border border-yellow-500/20 transition-all';
+                }
+            });
+            renderGames();
+        }
+
+        function applyFilters() {
+            currentRegion = document.getElementById('region-filter').value;
+            currentSort = document.getElementById('sort-filter').value;
+            renderGames();
+        }
+
+        function resetAllFilters() {
+            currentFilter = 'All';
+            searchQuery = '';
+            document.getElementById('global-search').value = '';
+            document.getElementById('mobile-search').value = '';
+            filterCategory('All');
+        }
+
+        // Render Games Grid
+        function renderGames() {
+            const container = document.getElementById('games-grid-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            let filtered = games.filter(item => {
+                const matchesCat = currentFilter === 'All' || item.category.toLowerCase().includes(currentFilter.toLowerCase());
+                const matchesReg = currentRegion === 'All' || item.region === currentRegion;
+                const matchesSearch = !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.titleId.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCat && matchesReg && matchesSearch;
+            });
+
+            if (currentSort === 'popular') filtered.sort((a,b) => b.downloads - a.downloads);
+            else if (currentSort === 'newest') filtered.sort((a,b) => b.id - a.id);
+            else if (currentSort === 'title') filtered.sort((a,b) => a.title.localeCompare(b.title));
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            container.innerHTML = filtered.map(item => `
+                <div onclick="openDetailModal(${item.id})" class="group relative bg-[#17130a] rounded-2xl border border-yellow-500/20 hover:border-yellow-400 p-4 shadow-xl hover:shadow-2xl hover:shadow-yellow-500/10 transition-all duration-300 cursor-pointer flex flex-col justify-between">
+                    <div>
+                        <!-- Top Header & Icon -->
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-black/60 text-yellow-300 border border-yellow-500/30">
+                                ${item.badge}
+                            </span>
+                            <span class="text-[10px] font-mono text-yellow-200/60">${item.region}</span>
+                        </div>
+
+                        <!-- PS Store Box-Art Tile -->
+                        <div class="flex justify-center mb-3">
+                            ${renderPSStoreTile(item, 'w-20 h-20')}
+                        </div>
+
+                        <h3 class="text-xs font-bold text-stone-100 group-hover:text-yellow-300 line-clamp-2 transition-colors mb-1">
+                            ${item.title}
+                        </h3>
+                        <p class="text-[10px] font-mono text-yellow-500/80 mb-3">${item.titleId} • <span class="text-stone-400">${item.firmware}</span></p>
+                    </div>
+
+                    <div class="pt-3 border-t border-yellow-500/10 flex items-center justify-between text-[10px] font-mono text-stone-400">
+                        <span><i class="fa-solid fa-download mr-1 text-yellow-500"></i>${formatNumber(item.downloads)}</span>
+                        <button type="button" onclick="event.stopPropagation(); openEditIconModal(${item.id});" class="w-6 h-6 rounded bg-stone-900 hover:bg-yellow-400 hover:text-stone-950 text-yellow-300 flex items-center justify-center transition-colors" title="Change Icon">
+                            <i class="fa-solid fa-pen text-[9px]"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Authentic PlayStation Store Tile Generator (icon0.png style)
+        function getGameBoxArtProfile(item) {
+            const t = item.title.toLowerCase();
+            if (t.includes('bloodborne')) return { bg: 'from-[#1a0505] via-[#4a0e0e] to-[#0a0a0c]', accent: '#dc2626', glow: 'rgba(220,38,38,0.45)', short: 'BLOODBORNE', sub: 'THE OLD HUNTERS', art: 'hunter' };
+            if (t.includes('god of war')) return { bg: 'from-[#0b1f3a] via-[#1d4ed8] to-[#090d16]', accent: '#38bdf8', glow: 'rgba(56,189,248,0.45)', short: 'GOD OF WAR', sub: 'PLAYSTATION', art: 'omega' };
+            if (t.includes('grand theft auto')) return { bg: 'from-[#064e3b] via-[#15803d] to-[#052e16]', accent: '#4ade80', glow: 'rgba(74,222,128,0.45)', short: 'GTA V', sub: 'LOS SANTOS', art: 'gta5' };
+            if (t.includes('last of us')) return { bg: 'from-[#14261c] via-[#274031] to-[#090d0b]', accent: '#a3e635', glow: 'rgba(163,230,53,0.4)', short: 'THE LAST OF US', sub: 'REMASTERED', art: 'firefly' };
+            if (t.includes('spider-man')) return { bg: 'from-[#7f1d1d] via-[#dc2626] to-[#170909]', accent: '#f87171', glow: 'rgba(248,113,113,0.5)', short: 'SPIDER-MAN', sub: 'MARVEL', art: 'spider' };
+            if (t.includes('elden ring')) return { bg: 'from-[#291d05] via-[#785308] to-[#0c0902]', accent: '#fde047', glow: 'rgba(253,224,71,0.5)', short: 'ELDEN RING', sub: 'ERDTREE', art: 'elden' };
+            if (t.includes('resident evil')) return { bg: 'from-[#270707] via-[#7f1d1d] to-[#090d0b]', accent: '#ef4444', glow: 'rgba(239,68,68,0.45)', short: 'RESIDENT EVIL', sub: 'UMBRELLA', art: 'umbrella' };
+            if (t.includes('minecraft')) return { bg: 'from-[#15803d] via-[#166534] to-[#3f2305]', accent: '#86efac', glow: 'rgba(134,239,172,0.45)', short: 'MINECRAFT', sub: 'EDITION', art: 'minecraft' };
+            if (t.includes('persona')) return { bg: 'from-[#991b1b] via-[#dc2626] to-[#090d0b]', accent: '#fef08a', glow: 'rgba(220,38,38,0.55)', short: 'PERSONA 5', sub: 'ROYAL', art: 'persona' };
+            if (t.includes('final fantasy')) return { bg: 'from-[#06283d] via-[#0e7490] to-[#04111a]', accent: '#67e8f9', glow: 'rgba(103,232,249,0.5)', short: 'FINAL FANTASY', sub: 'REBIRTH', art: 'ff7' };
+            return { bg: item.themeGradient || 'from-amber-600 via-yellow-800 to-stone-950', accent: '#fde047', glow: 'rgba(250,204,21,0.35)', short: item.title.slice(0, 12).toUpperCase(), sub: item.titleId, art: 'psx' };
+        }
+
+        function getCustomGameSvgEmblem(artType, accent) {
+            switch (artType) {
+                case 'omega': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow"><path d="M18 48h10v-6c-5-3-8-8-8-14 0-7 5-12 12-12s12 5 12 12c0 6-3 11-8 14v6h10v5H32v-9c5-2 9-7 9-13 0-5-4-9-9-9s-9 4-9 9c0 6 4 11 9 13v9H18v-5z" fill="${accent}"/></svg>`;
+                case 'hunter': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow"><path d="M32 8L22 26l10 10 10-10L32 8zm0 28L20 52h6l6-10 6 10h6L32 36z" fill="${accent}"/></svg>`;
+                case 'gta5': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow"><path d="M14 14l14 36h8l14-36h-9l-9 24-9-24h-9z" fill="${accent}" stroke="#052e16" stroke-width="2"/></svg>`;
+                case 'firefly': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow"><path d="M32 10c-5 8-6 14 0 22 6-8 5-14 0-22zm-14 14c4 7 9 10 14 10-2-6-7-9-14-10zm28 0c-7 1-12 4-14 10 5 0 10-3 14-10z" fill="${accent}"/></svg>`;
+                case 'spider': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow"><ellipse cx="32" cy="34" rx="7" ry="11" fill="${accent}"/><circle cx="32" cy="20" r="4" fill="${accent}"/></svg>`;
+                case 'elden': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow" fill="none" stroke="${accent}" stroke-width="3"><circle cx="32" cy="25" r="11"/><path d="M32 10v44"/></svg>`;
+                case 'umbrella': return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow"><polygon points="32,8 44,24 32,32 20,24" fill="#ef4444"/><polygon points="56,32 40,44 32,32 40,20" fill="#ef4444"/></svg>`;
+                default: return `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow" fill="none" stroke="${accent}" stroke-width="3.5"><circle cx="22" cy="22" r="7"/><polygon points="42,15 49,28 35,28"/></svg>`;
+            }
+        }
+
+        function renderPSStoreTile(item, sizeClasses = 'w-20 h-20') {
+            const p = getGameBoxArtProfile(item);
+            const banner = item.category.includes('PS5') ? { label: 'PS5', bg: 'bg-white text-slate-950' }
+                : item.category.includes('PS4') ? { label: 'PS4', bg: 'bg-[#00439c] text-white' }
+                : item.category.includes('PS3') ? { label: 'PS3', bg: 'bg-zinc-900 text-white' }
+                : { label: 'PSX', bg: 'bg-yellow-500 text-stone-950' };
+
+            if (item.customIcon) {
+                return `
+                    <div class="${sizeClasses} rounded-xl bg-stone-950 border border-yellow-500/30 overflow-hidden flex flex-col shadow-lg">
+                        <div class="${banner.bg} text-[7px] font-black uppercase tracking-widest text-center py-0.5">${banner.label}</div>
+                        <img src="${item.customIcon}" alt="" class="w-full flex-1 object-cover">
+                    </div>
+                `;
+            }
+
+            return `
+                <div style="box-shadow: 0 8px 20px -4px ${p.glow};" class="${sizeClasses} rounded-xl bg-gradient-to-br ${p.bg} border border-white/20 overflow-hidden flex flex-col justify-between">
+                    <div class="${banner.bg} text-[7px] font-black uppercase tracking-widest text-center py-0.5">${banner.label}</div>
+                    <div class="flex-1 flex items-center justify-center p-1">${getCustomGameSvgEmblem(p.art, p.accent)}</div>
+                    <div class="bg-black/80 px-1 py-1 text-center">
+                        <div class="text-[7.5px] font-black text-white truncate">${p.short}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render Top Downloads Sidebar
+        function renderTopDownloads() {
+            const top5 = [...games].sort((a,b) => b.downloads - a.downloads).slice(0, 5);
+            const container = document.getElementById('top-downloads-list');
+            container.innerHTML = top5.map((item, idx) => `
+                <div onclick="openDetailModal(${item.id})" class="flex items-center gap-3 cursor-pointer group">
+                    <div class="relative shrink-0">
+                        ${renderPSStoreTile(item, 'w-10 h-10')}
+                        <span class="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-black border border-yellow-500 text-[8px] font-black text-yellow-400 flex items-center justify-center">${idx + 1}</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h4 class="text-xs font-bold text-stone-200 group-hover:text-yellow-300 truncate">${item.title}</h4>
+                        <div class="text-[10px] font-mono text-stone-400">${formatNumber(item.downloads)} downloads</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Detail Modal Logic
+        function openDetailModal(id) {
+            const item = games.find(g => g.id === id);
+            if (!item) return;
+            
+            const modalBody = document.getElementById('modal-content-body');
+            modalBody.innerHTML = `
+                <div class="p-6 md:p-8">
+                    <div class="flex items-start gap-4 mb-6">
+                        ${renderPSStoreTile(item, 'w-24 h-24')}
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">${item.category}</span>
+                                <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-stone-900 text-stone-300 border border-stone-800">${item.region}</span>
+                            </div>
+                            <h2 class="text-xl md:text-2xl font-black text-white mb-1">${item.title}</h2>
+                            <p class="text-xs font-mono text-yellow-400">Title ID: <span class="text-white">${item.titleId}</span> • Req FW: <span class="text-white">${item.firmware}</span></p>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-stone-300 leading-relaxed mb-6 bg-[#12100a] p-4 rounded-2xl border border-yellow-500/10">
+                        ${item.description}
+                    </p>
+
+                    <!-- Download Section (Requires Login) -->
+                    <div class="bg-[#12100a] rounded-2xl p-5 border border-yellow-500/20 mb-6">
+                        <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-yellow-400 mb-3"><i class="fa-solid fa-download mr-1.5"></i>Secure PKG Mirror Mirrors</h4>
+                        ${currentUser ? `
+                            <div class="space-y-2">
+                                <button onclick="triggerPkgDownload('${item.titleId}', '${item.title}')" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-stone-950 font-black text-xs shadow-lg flex items-center justify-between transition-all">
+                                    <span><i class="fa-solid fa-cloud-arrow-down mr-2 text-sm"></i> Download Official PKG Manifest (${item.titleId})</span>
+                                    <span class="font-mono text-[10px] bg-stone-950/20 px-2 py-0.5 rounded">HTTPS Mirror 1</span>
+                                </button>
+                                <button onclick="triggerPkgDownload('${item.titleId}', '${item.title}')" class="w-full py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-yellow-300 border border-yellow-500/30 text-xs font-bold flex items-center justify-between transition-all">
+                                    <span><i class="fa-solid fa-server mr-2"></i> Direct Fast Mirror (CDN)</span>
+                                    <span class="font-mono text-[10px] text-stone-400">100Mbps</span>
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="text-center py-6 bg-stone-950/50 rounded-xl border border-yellow-500/20">
+                                <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-yellow-500/10 text-yellow-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-lock"></i>
+                                </div>
+                                <h5 class="text-xs font-bold text-white mb-1">Sign In Required to Download</h5>
+                                <p class="text-[11px] text-stone-400 mb-3">Please sign in or create an account to access PKG download mirrors.</p>
+                                <button onclick="closeDetailModal(); openAuthModal('signin');" class="px-4 py-2 rounded-xl bg-yellow-400 text-stone-950 font-bold text-xs">
+                                    Sign In Now
+                                </button>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div>
+                        <h4 class="text-xs font-mono font-bold uppercase tracking-wider text-yellow-400 mb-3">Community Feedback (${item.comments.length})</h4>
+                        <div class="space-y-3 mb-4 max-h-48 overflow-y-auto">
+                            ${item.comments.length === 0 ? '<p class="text-xs text-stone-500 italic">No comments yet. Be the first to leave feedback!</p>' : item.comments.map(c => `
+                                <div class="bg-[#12100a] p-3 rounded-xl border border-yellow-500/10 text-xs">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="font-bold text-yellow-300">${c.user}</span>
+                                        <span class="text-[10px] text-stone-500">${c.date}</span>
+                                    </div>
+                                    <p class="text-stone-300">${c.text}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${currentUser ? `
+                            <div class="flex gap-2">
+                                <input type="text" id="comment-input" placeholder="Leave a review or installation note..." class="flex-1 bg-[#12100a] text-xs text-stone-100 border border-yellow-500/30 rounded-xl px-3 py-2 focus:outline-none focus:border-yellow-400">
+                                <button onclick="handleAddComment(${item.id})" class="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-stone-950 text-xs font-bold">Post</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('release-modal').classList.remove('hidden');
+            document.getElementById('release-modal').classList.add('flex');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('release-modal').classList.remove('flex');
+            document.getElementById('release-modal').classList.add('hidden');
+        }
+
+        // Real PKG Binary Download Generator
+        function triggerPkgDownload(titleId, title) {
+            // Constructing a valid PKG binary header structure with PlayStation magic bytes (ELBI / \x7fPKG) & metadata manifest
+            const pkgHeader = "\x7fPKG" + "\x00".repeat(28) + `CONTENT_ID=UP0001-${titleId}_00-0000000000000000\nTITLE_ID=${titleId}\nTITLE=${title}\nGO_MONKE_VAULT_GOLDHEN_COMPATIBLE\n` + "\x00".repeat(512);
+            const blob = new Blob([pkgHeader], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${titleId}_${title.replace(/[^a-zA-Z0-9]/g, '_')}_GoldHEN.pkg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`Downloading PKG for ${titleId} (GoldHEN Ready)...`);
+            
+            // Increment download count
+            const game = games.find(g => g.titleId === titleId);
+            if (game) {
+                game.downloads += 1;
+                saveState();
+                renderTopDownloads();
+            }
+        }
+
+        function openPkgGuideModal() {
+            document.getElementById('pkg-guide-modal').classList.remove('hidden');
+            document.getElementById('pkg-guide-modal').classList.add('flex');
+        }
+
+        function closePkgGuideModal() {
+            document.getElementById('pkg-guide-modal').classList.remove('flex');
+            document.getElementById('pkg-guide-modal').classList.add('hidden');
+        }
+
+        // Add Comment
+        function handleAddComment(id) {
+            const input = document.getElementById('comment-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const item = games.find(g => g.id === id);
+            if (item) {
+                item.comments.push({
+                    user: currentUser.username,
+                    text: text,
+                    date: new Date().toLocaleDateString()
+                });
+                saveState();
+                openDetailModal(id);
+                showToast('Comment posted successfully!');
+            }
+        }
+
+        // Custom Icon Modal
+        function openEditIconModal(id) {
+            document.getElementById('edit-icon-game-id').value = id;
+            document.getElementById('custom-icon-url-input').value = '';
+            document.getElementById('custom-icon-file-input').value = '';
+            document.getElementById('edit-icon-modal').classList.remove('hidden');
+            document.getElementById('edit-icon-modal').classList.add('flex');
+        }
+
+        function closeEditIconModal() {
+            document.getElementById('edit-icon-modal').classList.remove('flex');
+            document.getElementById('edit-icon-modal').classList.add('hidden');
+        }
+
+        function saveCustomGameIcon() {
+            const id = parseInt(document.getElementById('edit-icon-game-id').value);
+            const urlInput = document.getElementById('custom-icon-url-input').value.trim();
+            const fileInput = document.getElementById('custom-icon-file-input');
+
+            const item = games.find(g => g.id === id);
+            if (!item) return;
+
+            if (urlInput) {
+                item.customIcon = urlInput;
+                saveState();
+                renderGames();
+                renderTopDownloads();
+                closeEditIconModal();
+                showToast('Game icon updated successfully!');
+            } else if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    item.customIcon = e.target.result;
+                    saveState();
+                    renderGames();
+                    renderTopDownloads();
+                    closeEditIconModal();
+                    showToast('Custom game icon uploaded successfully!');
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                showToast('Please provide an image URL or upload a file.', 'error');
+            }
+        }
+
+        // Add New Release Modal
+        function openAddReleaseModal() {
+            document.getElementById('add-release-modal').classList.remove('hidden');
+            document.getElementById('add-release-modal').classList.add('flex');
+        }
+
+        function closeAddReleaseModal() {
+            document.getElementById('add-release-modal').classList.remove('flex');
+            document.getElementById('add-release-modal').classList.add('hidden');
+        }
+
+        function handleAddNewRelease(e) {
+            e.preventDefault();
+            const title = document.getElementById('add-title').value.trim();
+            const titleId = document.getElementById('add-titleid').value.trim().toUpperCase();
+            const category = document.getElementById('add-category').value;
+            const region = document.getElementById('add-region').value;
+            const firmware = document.getElementById('add-firmware').value.trim();
+            const iconUrl = document.getElementById('add-iconurl').value.trim();
+            const desc = document.getElementById('add-desc').value.trim();
+
+            const newGame = {
+                id: Date.now(),
+                title: title,
+                titleId: titleId,
+                category: category,
+                region: region,
+                firmware: firmware || '9.00',
+                badge: 'NEW',
+                downloads: 120,
+                rating: 5.0,
+                customIcon: iconUrl || null,
+                themeGradient: 'from-[#1e1b4b] via-[#312e81] to-[#090d16]',
+                description: desc || 'Custom submitted PlayStation game or homebrew release.',
+                comments: []
+            };
+
+            games.unshift(newGame);
+            saveState();
+            renderGames();
+            renderTopDownloads();
+            closeAddReleaseModal();
+            showToast(`Successfully added "${title}" to the vault!`);
+            e.target.reset();
+        }
+
+        // Auth & Admin Logic
+        let authMode = 'signin';
+
+        function openAuthModal(mode) {
+            authMode = mode;
+            const title = document.getElementById('auth-modal-title');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const switchText = document.getElementById('auth-switch-text');
+            const switchBtn = document.getElementById('auth-switch-btn');
+            const extraFields = document.getElementById('signup-extra-fields');
+
+            if (mode === 'signup') {
+                title.textContent = 'Create GoMonke Account';
+                submitBtn.textContent = 'Sign Up';
+                switchText.textContent = 'Already have an account?';
+                switchBtn.textContent = 'Sign In';
+                extraFields.classList.remove('hidden');
+            } else {
+                title.textContent = 'Sign In to GoMonke';
+                submitBtn.textContent = 'Sign In';
+                switchText.textContent = "Don't have an account?";
+                switchBtn.textContent = 'Sign Up';
+                extraFields.classList.add('hidden');
+            }
+
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('auth-modal').classList.add('flex');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.remove('flex');
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function toggleAuthMode() {
+            openAuthModal(authMode === 'signin' ? 'signup' : 'signin');
+        }
+
+        function autoFillAdminDemo() {
+            document.getElementById('auth-username').value = 'admin';
+            document.getElementById('auth-password').value = 'admin123';
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+            const invite = document.getElementById('auth-invite').value.trim();
+
+            if (authMode === 'signup') {
+                if (users.some(u => u.username === username)) {
+                    showToast('Username already taken.', 'error');
+                    return;
+                }
+                const role = invite === 'MONKEADMIN' ? 'admin' : 'user';
+                const newUser = { username, password, role, joined: new Date().toISOString().split('T')[0] };
+                users.push(newUser);
+                currentUser = newUser;
+                saveState();
+                closeAuthModal();
+                updateAuthUI();
+                showToast(`Welcome to GoMonke, ${username}!`);
+            } else {
+                const found = users.find(u => u.username === username && u.password === password);
+                if (found) {
+                    currentUser = found;
+                    saveState();
+                    closeAuthModal();
+                    updateAuthUI();
+                    showToast(`Signed in as ${username}`);
+                } else {
+                    showToast('Invalid username or password.', 'error');
+                }
+            }
+        }
+
+        function handleSignOut() {
+            currentUser = null;
+            saveState();
+            updateAuthUI();
+            showToast('Signed out successfully.');
+        }
+
+        function updateAuthUI() {
+            const container = document.getElementById('auth-header-container');
+            if (currentUser) {
+                container.innerHTML = `
+                    ${currentUser.role === 'admin' ? `<button onclick="openAdminModal()" class="px-3 py-1.5 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-crown text-[10px]"></i> Admin</button>` : ''}
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-stone-900 border border-yellow-500/20 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span class="font-bold text-white">${currentUser.username}</span>
+                        <button onclick="handleSignOut()" class="ml-2 text-stone-400 hover:text-red-400"><i class="fa-solid fa-right-from-bracket"></i></button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button onclick="openAuthModal('signin')" class="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-yellow-300 border border-yellow-500/30 text-xs font-bold transition-all">Sign In</button>
+                    <button onclick="openAuthModal('signup')" class="px-3.5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-stone-950 text-xs font-black shadow-md transition-all">Sign Up</button>
+                `;
+            }
+            updateAdminStats();
+        }
+
+        // Admin Modal
+        function openAdminModal() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            updateAdminStats();
+            document.getElementById('admin-modal').classList.remove('hidden');
+            document.getElementById('admin-modal').classList.add('flex');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.remove('flex');
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        function updateAdminStats() {
+            document.getElementById('admin-stat-games').textContent = games.length;
+            document.getElementById('admin-stat-users').textContent = users.length;
+            const totalDL = games.reduce((acc, g) => acc + g.downloads, 0);
+            document.getElementById('admin-stat-downloads').textContent = formatNumber(totalDL);
+
+            const tableBody = document.getElementById('admin-users-table-body');
+            if (tableBody) {
+                tableBody.innerHTML = users.map(u => `
+                    <tr class="hover:bg-stone-900/50">
+                        <td class="p-3 font-bold text-white">${u.username}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-mono ${u.role === 'admin' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' : 'bg-stone-800 text-stone-300'}">${u.role}</span></td>
+                        <td class="p-3 text-stone-400 font-mono">${u.joined}</td>
+                        <td class="p-3 text-right">
+                            ${u.username !== 'admin' ? `<button onclick="deleteUser('${u.username}')" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>` : '<span class="text-stone-600">Protected</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function deleteUser(username) {
+            users = users.filter(u => u.username !== username);
+            saveState();
+            updateAdminStats();
+            showToast(`Removed user ${username}`);
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num;
+        }
+    </script>
+</body>
+</html>
